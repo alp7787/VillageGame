@@ -18,7 +18,12 @@ public class GameManager : MonoBehaviour
 	// these distances modify the respective steering behaviors
 	public float avoidDist;
 	public float separationDist;
-	
+
+	private int deadVillagers;
+	public int DeadVillagers { get { return deadVillagers; } set { deadVillagers = value; } }
+
+	private int savedVillagers;
+	public int SavedVillagers { get { return savedVillagers; } set { savedVillagers = value; } }
 
 	// set in editor to promote reusability.
 	public int numberOfvillagers;
@@ -42,48 +47,45 @@ public class GameManager : MonoBehaviour
 	
 	public Vector3 Centroid { get { return centroid; } }
 	public GameObject centroidContainer;
-	
-	 
 		
 	//mayor and accessor
 	private GameObject mayor;
 	public GameObject Mayor {get{return mayor;}}
 	
-	//Text GUI and accessors
-	private Saved savedText;
-	public Saved Saved {get{return savedText;}}
-	
-	private Dead deadText;
-	public Dead Dead {get{return deadText;}}
-	
 	//list of werewolves with accessor 
 	private List<GameObject> werewolves = new List<GameObject>();
-	public List<GameObject> Werewolves {get{return werewolves;}}
+	public List<GameObject> Werewolves { get { return werewolves; } }
 	
 	// list of villagers with accessor
 	private List<GameObject> villagers = new List<GameObject>();
-	public List<GameObject> Villagers {get{return villagers;}}
+	public List<GameObject> Villagers { get { return villagers; } }
 	
 	//list of Mayor followers
 	private List<Villager> mfollowers = new List<Villager>();
-	public List<Villager> Followers {get{return mfollowers;}}
+	public List<Villager> Followers { get { return mfollowers; } }
 	
 	//list of villager followers
 	public List<GameObject> VillageFollowers = new List<GameObject>();
-	public List<GameObject> vFollowers {get{return VillageFollowers;}}
+	public List<GameObject> vFollowers { get { return VillageFollowers; } }
 	
-	//list of werewilf followers
+	//list of werewolf followers
 	public List<GameObject> WerewolfFollowers = new List<GameObject>();
-	public List<GameObject> wFollowers {get{return WerewolfFollowers;}}
+	public List<GameObject> wFollowers { get { return WerewolfFollowers; } }
 	
 
 	// array of obstacles with accessor
 	private  GameObject[] obstacles;
-	public GameObject[] Obstacles {get{return obstacles;}}
+	public GameObject[] Obstacles { get { return obstacles; } }
 	
 	// this is a 2-dimensional array for distances between villagers
 	// it is recalculated each frame on update
 	private float[,] distances;
+
+
+	// GameObjects to hold our GUITexts
+	// These are set in the UNITY INSPECTOR
+	public GameObject DeadVillagersText;
+	public GameObject SavedVillagersText;
 
 		
 	//Set stage for game, creating characters and the simple GUI implemented.
@@ -92,23 +94,54 @@ public class GameManager : MonoBehaviour
 		instance = this;
 		//construct our 2d array based on the value set in the editor
 		distances = new float[numberOfvillagers, numberOfvillagers];
-		//reference to Vehicle script component for each flocker
-		//Flocking flocker; // reference to flocker scripts
-		Villager villager;
-		Werewolf werewolf;
-		Follow follower;
 		
-		
-		
+		// Get all obstacles
 		obstacles = GameObject.FindGameObjectsWithTag ("Obstacle");
-		
+
+		// Get the mayor
 		mayor = GameObject.FindGameObjectWithTag ("Mayor");
 		
+		GenerateVillagers ();
+		GenerateWerewolves ();
+	}
+
+	// Creates a new villager, duh
+	public void CreateNewVillager()
+	{
+		Villager villager;
+		Follow follower;
+
+		GameObject newVillager = (GameObject)Instantiate (villagerPrefab, 
+		                                                  new Vector3 (371 + UnityEngine.Random.Range (0, 10), 5, 365), Quaternion.identity);
+		villagers.Add (newVillager);
+		//grab a component reference
+		villager = newVillager.GetComponent<Villager> ();
+		
+		villager.GetComponent<MeshRenderer> ().material.SetColor ("_Color", Color.green);
+		
+		//set values in the Vehicle script
+		villager.Index = villagers.Count - 1;
+		
+		VillageFollowers.Add ((GameObject)Instantiate (followerPrefab, 
+		                                               new Vector3 (371 + UnityEngine.Random.Range (0, 10), 5, 365), Quaternion.identity));
+		
+		//Create a follower for the minimap
+		follower = VillageFollowers [VillageFollowers.Count - 1].GetComponent<Follow> ();
+		follower.ToFollow = villagers [villagers.Count - 1];
+		VillageFollowers [VillageFollowers.Count - 1].GetComponent<MeshRenderer> ().material.SetColor ("_Color", Color.green);
+		villager.Follower = follower;
+	}
+
+	private void GenerateVillagers()
+	{
+		Villager villager;
+		Follow follower;
+
 		for (int i = 0; i < numberOfvillagers; i++) {
 			//Instantiate a flocker prefab, catch the reference, cast it to a GameObject
 			//and add it to our list all in one line.
 			villagers.Add ((GameObject)Instantiate (villagerPrefab, 
-				new Vector3 (600 + 5 * i, 5, 400), Quaternion.identity));
+			                                        new Vector3 (600 + 5 * i, 5, 400), Quaternion.identity));
 			//grab a component reference
 			villager = villagers [i].GetComponent<Villager> ();
 			villagers[i].GetComponent<MeshRenderer>().material.SetColor("_Color", Color.green);
@@ -116,7 +149,7 @@ public class GameManager : MonoBehaviour
 			villager.Index = i;
 			
 			VillageFollowers.Add((GameObject)Instantiate(followerPrefab, 
-				new Vector3(600 + 5 * i, 150,400), Quaternion.identity));
+			                                             new Vector3(600 + 5 * i, 150,400), Quaternion.identity));
 			
 			//Create a follower for the minimap
 			follower = VillageFollowers[i].GetComponent<Follow> ();
@@ -125,33 +158,39 @@ public class GameManager : MonoBehaviour
 			villager.Follower = follower;
 			
 		}
-		
+	}
+
+	private void GenerateWerewolves()
+	{
+		Werewolf werewolf;
+		Follow follower;
+
 		for (int i=0; i < numberOfWerewolves; i++)
 		{
 			if(i == 0)
 			{
 				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				new Vector3(491, 35, 931), Quaternion.identity));
+				                                        new Vector3(491, 35, 931), Quaternion.identity));
 			}
 			else if(i == 1)
 			{
 				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				new Vector3(930, 35, 441), Quaternion.identity));
+				                                        new Vector3(930, 35, 441), Quaternion.identity));
 			}
 			else if(i == 2)
 			{
 				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				new Vector3(385, 35, 50), Quaternion.identity));
+				                                        new Vector3(385, 35, 50), Quaternion.identity));
 			}
 			else if(i == 3)
 			{
 				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				new Vector3(89, 35, 489), Quaternion.identity));	
+				                                        new Vector3(89, 35, 489), Quaternion.identity));	
 			}
 			else
 			{
 				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				new Vector3(700 + 5 * i, 5, 600), Quaternion.identity));
+				                                        new Vector3(700 + 5 * i, 5, 600), Quaternion.identity));
 			}
 			
 			//grab a component reference
@@ -161,7 +200,7 @@ public class GameManager : MonoBehaviour
 			werewolf.Index = i;
 			
 			WerewolfFollowers.Add((GameObject)Instantiate(followerPrefab, 
-				new Vector3(600 + 5 * i, 150,400), Quaternion.identity));
+			                                              new Vector3(600 + 5 * i, 150,400), Quaternion.identity));
 			follower = WerewolfFollowers[i].GetComponent<Follow> ();
 			follower.ToFollow = werewolves[i];
 			WerewolfFollowers[i].GetComponent<MeshRenderer>().material.SetColor("_Color", Color.red);
@@ -169,11 +208,42 @@ public class GameManager : MonoBehaviour
 			
 			
 		}
+	}
+
+	public void SaveVillager(Villager villager)
+	{
+		Villagers.Remove(villager.gameObject);
+		vFollowers.Remove(villager.Follower.gameObject);
+		Followers.Remove(villager);
+		Destroy(villager.Follower.gameObject);
+		Destroy(villager.Follower);
+		Destroy(villager.gameObject);
 		
-		//references to GUI texts in Game
-		savedText = GameObject.FindGameObjectWithTag("Saved").GetComponent<Saved>();
-		deadText = GameObject.FindGameObjectWithTag("Dead").GetComponent<Dead>();
-		
+		CreateNewVillager();
+		savedVillagers++;
+		SavedVillagersText.guiText.text = "Villagers Saved: " + savedVillagers;
+	}
+
+
+	public void KillVillager(Villager villager)
+	{
+		//Debug.Log (villager);
+		// Remove the Villager from everything and stuff
+		Villagers.Remove(villager.gameObject);
+		vFollowers.Remove(villager.Follower.gameObject);
+		Followers.Remove(villager);
+		Destroy(villager.Follower.gameObject);
+		Destroy(villager.Follower);
+		Destroy (villager.gameObject);
+
+		// create new villager
+		CreateNewVillager();
+
+		// increment
+		deadVillagers++;
+
+		// Update text
+		DeadVillagersText.guiText.text = "Villagers Killed: " + deadVillagers;
 	}
 	
 	public void Update( )
@@ -196,32 +266,7 @@ public class GameManager : MonoBehaviour
 		}
 		
 	}
-	
-	public void createNewVillager()
-	{
-		Villager villager;
-		Follow follower;
-		
-		villagers.Add ((GameObject)Instantiate (villagerPrefab, 
-				new Vector3 (371 + UnityEngine.Random.Range(0,10), 5, 365), Quaternion.identity));
-			//grab a component reference
-			villager = villagers[villagers.Count-1].GetComponent<Villager> ();
-			villagers[villagers.Count-1].GetComponent<MeshRenderer>().material.SetColor("_Color", Color.green);
-			//set values in the Vehicle script
-			villager.Index = villagers.Count-1;
-		
-			VillageFollowers.Add((GameObject)Instantiate(followerPrefab, 
-				new Vector3(371 + UnityEngine.Random.Range(0,10), 5, 365), Quaternion.identity));
-			
-			//Create a follower for the minimap
-			follower = VillageFollowers[VillageFollowers.Count-1].GetComponent<Follow> ();
-			follower.ToFollow = villagers[villagers.Count-1];
-			VillageFollowers[VillageFollowers.Count-1].GetComponent<MeshRenderer>().material.SetColor("_Color", Color.green);
-			villager.Follower = follower;
-		
-		
-	}
-	
+
 	void calcDistances( )
 	{
 		float dist;

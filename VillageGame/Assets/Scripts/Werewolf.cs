@@ -3,13 +3,12 @@ using System.Collections;
 
 
 [RequireComponent(typeof(CharacterController))]
-[RequireComponent(typeof(Steering))]
+//[RequireComponent(typeof(Steering))]
 
 
-public class Werewolf : MonoBehaviour {
-	
-	private CharacterController characterController;
-	private Steering steering;
+public class Werewolf : NPC {
+
+
 	private GameManager gameManager;
 	
 	private int index = -1;
@@ -20,11 +19,9 @@ public class Werewolf : MonoBehaviour {
 	}
 	
 	//movement variables
-	private float gravity = 200.0f;
 	private Vector3 moveDirection;
 	
 	//steering variable
-	private Vector3 steeringForce;
 	private GameObject respawnPont;
 	
 	//Hunting variables
@@ -32,11 +29,11 @@ public class Werewolf : MonoBehaviour {
 	private int preyIndex;
 	
 	// Use this for initialization
-	void Start () 
+	protected override void Start ()
 	{
 		//get component references
 		characterController = gameObject.GetComponent<CharacterController> ();
-		steering = gameObject.GetComponent<Steering> ();
+		//steering = gameObject.GetComponent<Steering> ();
 		
 		respawnPont = GameObject.FindGameObjectWithTag("Respawn");
 		
@@ -44,44 +41,36 @@ public class Werewolf : MonoBehaviour {
 		
 		preyIndex = 0;
 		target = gameManager.Villagers[preyIndex];
+		base.Start ();
 	}
 	
 	public void OnCollisionEnter(Collision wCollision)
 	{
 		if(wCollision.gameObject.tag == "Villager")
 		{
+			Villager death = wCollision.gameObject.GetComponent<Villager>();
+			gameManager.KillVillager(death);
 			
-			GameObject deadVillager = wCollision.gameObject;
-			Villager death = wCollision.gameObject.GetComponent<Villager>(); 
-			gameManager.Villagers.Remove(deadVillager);
-			gameManager.vFollowers.Remove(death.Follower.gameObject);
-			gameManager.Followers.Remove(death);
-			Destroy(death.Follower.gameObject);
-			Destroy(death.Follower);
-			Destroy(deadVillager);
-			gameManager.createNewVillager();
-			gameManager.Dead.DeadVillagers = gameManager.Dead.DeadVillagers + 1;
-			
-			findTarget();
+			FindTarget();
 		}
 	}
 	
 	// Update is called once per frame
-	void Update () 
+	protected override void Update () 
 	{
 		CalcSteeringForce ();
 		ClampSteering ();
 		
-		moveDirection = transform.forward * steering.Speed;
+		moveDirection = transform.forward * speed;
 		// movedirection equals velocity
 		//add acceleration
 		moveDirection += steeringForce * Time.deltaTime;
 		//update speed
-		steering.Speed = moveDirection.magnitude;
+		speed = moveDirection.magnitude;
 		
 		//area of fix
-		if (steering.Speed != moveDirection.magnitude) {
-			moveDirection = moveDirection.normalized * steering.Speed;
+		if (speed != moveDirection.magnitude) {
+			moveDirection = moveDirection.normalized * speed;
 		}
 		
 		//orient transform
@@ -95,7 +84,7 @@ public class Werewolf : MonoBehaviour {
 		characterController.Move (moveDirection * Time.deltaTime);
 	}
 	
-	private void findTarget()
+	private void FindTarget()
 	{
 		
 		GameObject prey;
@@ -107,62 +96,62 @@ public class Werewolf : MonoBehaviour {
 			if(Vector3.Distance(this.transform.position, prey.transform.position) 
 				< Vector3.Distance(this.transform.position, target.transform.position))
 			{
-				target = gameManager.Villagers[i];		
+				target = gameManager.Villagers[i];
 			}
 		}
 	}
 		
-	private void CalcSteeringForce ()
+	protected override void CalcSteeringForce ()
 	{
 		steeringForce = Vector3.zero;
 		
 		//Keeps werewolves away from Villager Spawn point
-		steeringForce += gameManager.avoidWt * steering.AvoidObstacle(respawnPont, 100f);
+		steeringForce += gameManager.avoidWt * AvoidObstacle(respawnPont, 100f);
 		
 		
 		float mayDist = Vector3.Distance(this.transform.position, gameManager.Mayor.transform.position);
 		
 		//Choose new villager to chase (closest villager)
 		target = gameManager.Villagers[0];
-		findTarget();
+		FindTarget();
 		
 		float tarDist = Vector3.Distance(this.transform.position, target.transform.position);
 		
 			if(tarDist > 30)
 			{
-				steeringForce += 10 * steering.Pursuit(target.transform.forward +
+				steeringForce += 10 * Pursuit(target.transform.forward +
 					target.transform.position);
 			}
 			else
 			{
-				steeringForce += 6 * steering.Seek(target);	
+				steeringForce += 6 * Seek(target);	
 			}
 	
 			if(mayDist < 20)
 			{
-				steeringForce += 20 * steering.Flee(gameManager.Mayor);	
+				steeringForce += 20 * Flee(gameManager.Mayor);	
 			}
 			else
 			{
-				steeringForce += 5 * steering.Evasion(gameManager.Mayor.transform.forward +
+				steeringForce += 5 * Evasion(gameManager.Mayor.transform.forward +
 					gameManager.Mayor.transform.position);
 			}
 		
-		//avoid close obstacles
+//		avoid close obstacles
 		for(int i =0; i < gameManager.Obstacles.Length; i++)
 		{
 			if(Vector3.Distance(this.transform.position, gameManager.Obstacles[i].transform.position) < 60)
 			{
-				steeringForce += gameManager.avoidWt * steering.AvoidObstacle(gameManager.Obstacles[i], gameManager.avoidDist);	
+				steeringForce += gameManager.avoidWt * AvoidObstacle(gameManager.Obstacles[i], gameManager.avoidDist);	
 			}
 		}
 	}
 	
-	private void ClampSteering ()
+	protected override void ClampSteering ()
 	{
-		if (steeringForce.magnitude > steering.maxForce) {
+		if (steeringForce.magnitude > maxForce) {
 			steeringForce.Normalize ();
-			steeringForce *= steering.maxForce;
+			steeringForce *= maxForce;
 		}
 	}
 	
@@ -174,7 +163,7 @@ public class Werewolf : MonoBehaviour {
 		if(transform.position.x > 750 || transform.position.x < 200 || 
 			transform.position.z > 715 || transform.position.z < 205)
 		{
-			steeringForce += steering.Seek(gameManager.gameObject);
+			steeringForce += Seek(gameManager.gameObject);
 		}
 		
 		return steeringForce;

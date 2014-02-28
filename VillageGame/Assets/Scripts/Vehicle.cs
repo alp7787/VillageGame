@@ -4,10 +4,10 @@ using System.Collections;
 //directive to enforce that our parent Game Object has a Character Controller
 [RequireComponent(typeof(CharacterController))]
 
-public class Vehicle : MonoBehaviour
+public class Vehicle : Steering
 {
 	//The Character Controller on my parent GameObject
-	CharacterController characterController;
+	protected CharacterController characterController;
 
 	// The linear gravity factor. Made available in the Editor.
 	public float gravity = 100.0f;
@@ -16,13 +16,13 @@ public class Vehicle : MonoBehaviour
 	public float mass = 1.0f;
 
 	// The initial orientation.
-	private Quaternion initialOrientation;
+	protected Quaternion initialOrientation;
 
 	// The cummulative rotation about the y-Axis.
-	private float cummulativeRotation;
+	protected float cummulativeRotation;
 
 	// The rotation factor, this will control the speed we rotate at.
-	public float rotationSensitvity = 500.0f;
+	public float rotationSensitvity = 2.0f;
 
 	// The scout is used to mark the future position of the vehicle.
 	// It is made visible as a debugging aid, but the point it is placed at is
@@ -31,26 +31,24 @@ public class Vehicle : MonoBehaviour
 
 	//variables used to align the vehicle with the terrain surface 
 	public float lookAheadDist = 2.0f; // How far ahead the scout is place
-	private Vector3 hitNormal; // Normal to the terrain under the vehicle
+	protected Vector3 hitNormal; // Normal to the terrain under the vehicle
 	private float halfHeight; // half the height of the vehicle
-	private Vector3 lookAtPt; // used to align the vehicle; marked by scout
-	private Vector3 rayOrigin; // point from which ray is cast to locate scout
-	private RaycastHit rayInfo; // struct to hold information returned by raycast
-	private int layerMask = 1 << 8; //mask for a layer containg the terrain
+	protected Vector3 lookAtPt; // used to align the vehicle; marked by scout
+	protected Vector3 rayOrigin; // point from which ray is cast to locate scout
+	protected RaycastHit rayInfo; // struct to hold information returned by raycast
+	protected int layerMask = 1 << 8; //mask for a layer containg the terrain
 
 	//movement variables - exposed in inspector panel
-	public float maxSpeed = 50.0f; //maximum speed of vehicle
-	public float maxForce = 15.0f; // maximimum force allowed
 	public float friction = 0.997f; // multiplier decreases speed
 	
 	//movement variables - updated by this component
-	private float speed = 0.0f;  //current speed of vehicle
-	private Vector3 steeringForce; // force that accelerates the vehicle
-	private Vector3 velocity; //change in position per second
+	//protected float speed = 0.0f;  //current speed of vehicle
+	protected Vector3 steeringForce; // force that accelerates the vehicle
+	//protected Vector3 velocity; //change in position per second
 
 
 	// Use this for initialization
-	void Start ()
+	protected override void Start ()
 	{
 		//Use GetComponent to save a reference to the Character Controller. This 
 		//generic method is avalable from the parent Game Object. The class in the  
@@ -66,15 +64,12 @@ public class Vehicle : MonoBehaviour
 		
 		//half the height of vehicle bounding box
 		halfHeight = renderer.bounds.extents.y;
+		base.Start ();
 	}
 
 	// Update is called once per frame
-	void Update ()
+	protected virtual void Update ()
 	{
-		// We will get our orientation before we move: rotate before translation	
-		// We are using the left or right movement of the Mouse to steer our vehicle. 
-		SteerWithMouse ();
-		CalcForces ();
 		//calculate steering - forces that change velocity
 		ClampForces ();
 		//forces must not exceed maxForce
@@ -85,51 +80,6 @@ public class Vehicle : MonoBehaviour
 			MoveAndAlign ();
 		}
 	}
-	
-
-	//-----------------------------------steer with mouse------------------------------------		
-	// In mouse steering, we keep track of the cumulative rotation on the y-axis which we can combine
-	// with our initial orientation to get our current heading. We are keeping our transform level so that
-	// right and left turning remains predictable even if our vehicle banks and climbs.	
-	void SteerWithMouse ()
-	{
-		//Get the left/right Input from the Mouse and use time along with a scaling factor 
-		// to add a controlled amount to our cummulative rotation about the y-Axis.
-		cummulativeRotation += Input.GetAxis ("Mouse X") * Time.deltaTime * rotationSensitvity;
-		
-		//Create a Quaternion representing our current cummulative rotation around the y-axis. 
-		Quaternion currentRotation = Quaternion.Euler (0.0f, cummulativeRotation, 0.0f);
-		
-		//Use the quaternion to update the transform of our vehicle of the vehicles Game Object based on initial orientation 
-		//and the currently applied rotation from the original orientation. 
-		transform.rotation = initialOrientation * currentRotation;
-	}
-
-	//----------------------------Accelerate with Arrow or WASD keys------------------------------------		
-	// If the user is pressing the up-arrow or W key we will return a force to accelerate the vehicle
-	// along its z-axis which is to say in the foward direction.
-	private Vector3 KeyboardAcceleration ()
-	{
-		//Move 'forward' based on player input
-		Vector3 force;
-		Vector3 dv = Vector3.zero;
-		//dv is desired velocity
-		dv.z = Input.GetAxis ("Vertical");
-		//forward is positive z 
-		//Take the moveDirection from the vehicle's local space to world space 
-		//using the transform of the Game Object this script is attached to.
-		dv = transform.TransformDirection (dv);
-		dv *= maxSpeed;
-		force = dv - transform.forward * speed;
-		return force;
-	}
-	
-	// Calculate the forces that alter velocity
-	private void CalcForces ()
-	{
-		steeringForce = Vector3.zero;
-		steeringForce += KeyboardAcceleration ();
-	}
 
 	// if steering forces exceed maxForce they are set to maxForce
 	private void ClampForces ()
@@ -139,9 +89,14 @@ public class Vehicle : MonoBehaviour
 			steeringForce *= maxForce;
 		}
 	}
+
+	protected virtual void CalcSteeringForce ()
+	{}
+	protected virtual void ClampSteering()
+	{}
 	
 	// acceleration and velocity are calculated
-	void CalcVelocity ()
+	protected virtual void CalcVelocity ()
 	{
 		Vector3 moveDirection = transform.forward;
 		// move in forward direction
