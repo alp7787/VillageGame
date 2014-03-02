@@ -3,6 +3,8 @@ using System.Collections;
 
 public class NPC : Vehicle {
 
+	protected GameManager gameManager;
+
 	// Use this for initialization
 	protected override void Start () {
 		base.Start ();
@@ -46,6 +48,12 @@ public class NPC : Vehicle {
 		dv -= transform.forward * speed;//subtract velocity to get vector in that direction
 		return dv;
 	}
+
+	// Does nothing, needs to be overridden by children
+	protected virtual Vector3 FollowPath()
+	{
+		return Vector3.zero;
+	}
 	
 	public Vector3 Arrival (Vector3 pos)
 	{
@@ -74,6 +82,45 @@ public class NPC : Vehicle {
 	{
 		return Seek(gO.transform.position);
 	}
+
+	//perpendicular vector
+	protected Vector3 PerpRight()
+	{
+		return new Vector3 (-transform.position.z, transform.position.y, transform.position.x);
+	}
+
+	//Avoidance -- steer such that you turn away from "facing" the object (versus "about-facing" instantly)
+	protected Vector3 Avoid(Vector3 targetPos)
+	{
+		Vector3 steeringForce;//returned value
+		Vector3 desVel;//inital desired "avoid" vector
+		// Set desiredVelocity equal to a vector TOWARDS targPos (we still want to go "that way," but have to steer around)
+		desVel = targetPos-transform.position;
+		// scale desired velocity so its magnitude equals max speed
+		desVel.Normalize();
+		desVel *= maxSpeed;
+		//now that we have that vector, we need to "rotate" our vector (lets assume by 1 degree) to go around the obstacle
+		//need a heuristic to determine whether to go left or right
+		if(Vector3.Dot(desVel,PerpRight()) >0)
+		{
+			desVel = PerpRight() * maxSpeed * 2;//actually right
+		}
+		if(Vector3.Dot(desVel,PerpRight()) <0)
+		{
+			desVel = PerpRight() * (-maxSpeed)* 2;
+		}
+		else//its perpendicular
+		{
+			if(Random.Range(0,1)==1)
+				desVel =PerpRight() * maxSpeed* 2;
+			else
+				desVel =PerpRight() * (-maxSpeed)* 2;
+		}
+		// to get steeringForce subtract current velocity from desired velocity
+		steeringForce = desVel - (transform.forward*speed);
+		return steeringForce;	
+	}
+
 	
 	public Vector3 Evasion (Vector3 fwd)
 	{

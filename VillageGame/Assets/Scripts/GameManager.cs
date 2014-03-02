@@ -33,6 +33,10 @@ public class GameManager : MonoBehaviour
 	public Object obstaclePrefab;
 	public Object followerPrefab;
 
+	public GameObject[] VillagerPath;
+	public GameObject[] WerewolfPath;
+	
+
 	//values used by all villagers that are calculated by controller on update
 	private Vector3 flockDirection;
 	private Vector3 centroid;
@@ -51,6 +55,10 @@ public class GameManager : MonoBehaviour
 	//mayor and accessor
 	private GameObject mayor;
 	public GameObject Mayor {get{return mayor;}}
+
+	// list of villagers with accessor
+	private List<Villager> mfollowers = new List<Villager>();
+	public List<Villager> Followers { get { return mfollowers; } }
 	
 	//list of werewolves with accessor 
 	private List<GameObject> werewolves = new List<GameObject>();
@@ -60,10 +68,6 @@ public class GameManager : MonoBehaviour
 	private List<GameObject> villagers = new List<GameObject>();
 	public List<GameObject> Villagers { get { return villagers; } }
 	
-	//list of Mayor followers
-	private List<Villager> mfollowers = new List<Villager>();
-	public List<Villager> Followers { get { return mfollowers; } }
-	
 	//list of villager followers
 	public List<GameObject> VillageFollowers = new List<GameObject>();
 	public List<GameObject> vFollowers { get { return VillageFollowers; } }
@@ -71,7 +75,8 @@ public class GameManager : MonoBehaviour
 	//list of werewolf followers
 	public List<GameObject> WerewolfFollowers = new List<GameObject>();
 	public List<GameObject> wFollowers { get { return WerewolfFollowers; } }
-	
+
+	public GameObject Cart;
 
 	// array of obstacles with accessor
 	private  GameObject[] obstacles;
@@ -100,9 +105,52 @@ public class GameManager : MonoBehaviour
 
 		// Get the mayor
 		mayor = GameObject.FindGameObjectWithTag ("Mayor");
+		Cart = GameObject.FindGameObjectWithTag("Cart");
 		
 		GenerateVillagers ();
 		GenerateWerewolves ();
+		SetUpPathsForNPCs();
+	}
+
+	private void SetUpPathsForNPCs()
+	{
+		//pull in path nodes as an array for villagers
+		GameObject[] tempArray = GameObject.FindGameObjectsWithTag("VillagerPath");
+
+		//instanstiate the pathArray with a length = to tempArray
+		VillagerPath = new GameObject[tempArray.Length];
+
+		//loop and plop the buggers in the right place
+		for(int i = 0; i <tempArray.Length; i++)
+		{
+			// Get index and stuff by naming convention
+			// Protip: Don't change the path node name
+			string[] splitName = tempArray[i].name.Split('-');
+			int index;
+
+			// Sidenote: While out is useful in some cases, it's also garbage when you don't know the default fail-case return
+			int.TryParse(splitName[1].ToString(), out index);//only way to get the damned int properly apparently...thanks Unity? -- Clay <3
+			VillagerPath[index] = tempArray[i];
+		}
+
+		//pull in path nodes as an array for villagers
+		GameObject[] tempArray2 = GameObject.FindGameObjectsWithTag("WerewolfPath");
+		
+		//instanstiate the pathArray with a length = to tempArray
+		WerewolfPath = new GameObject[tempArray2.Length];
+		
+		//loop and plop the buggers in the right place
+		for(int i = 0; i <tempArray2.Length; i++)
+		{
+			// Get index and stuff by naming convention
+			// Protip: Don't change the path node name
+			string[] splitName = tempArray2[i].name.Split('-');
+			int index;
+			
+			// Sidenote: While out is useful in some cases, it's also garbage when you don't know the default fail-case return
+			int.TryParse(splitName[1].ToString(), out index);//only way to get the damned int properly apparently...thanks Unity? -- Clay <3
+			WerewolfPath[index] = tempArray2[i];
+		}
 	}
 
 	// Creates a new villager, duh
@@ -204,9 +252,6 @@ public class GameManager : MonoBehaviour
 			follower = WerewolfFollowers[i].GetComponent<Follow> ();
 			follower.ToFollow = werewolves[i];
 			WerewolfFollowers[i].GetComponent<MeshRenderer>().material.SetColor("_Color", Color.red);
-			
-			
-			
 		}
 	}
 

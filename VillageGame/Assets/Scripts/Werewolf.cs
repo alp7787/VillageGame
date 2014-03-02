@@ -9,8 +9,9 @@ using System.Collections;
 public class Werewolf : NPC {
 
 
-	private GameManager gameManager;
-	
+	// Current node index, I believe. Don't quote me on that
+	private int currentNodeIndex = 0;
+
 	private int index = -1;
 	public int Index 
 	{
@@ -54,6 +55,26 @@ public class Werewolf : NPC {
 			FindTarget();
 		}
 	}
+
+	protected override Vector3 FollowPath()
+	{
+		// default so we don't break
+		if(gameManager.WerewolfPath.Length <= 0)
+			return Vector3.zero;
+		
+		//cycle the node if im too close
+		if(Vector3.Distance(transform.position, gameManager.WerewolfPath[currentNodeIndex].transform.position) <= 10.0f)
+		{
+			currentNodeIndex++;//go to next node
+			if(currentNodeIndex >= gameManager.WerewolfPath.Length)
+			{
+				currentNodeIndex = 0;
+			}
+		}
+		return Seek(gameManager.WerewolfPath[currentNodeIndex].transform.position);//head for the next node in the path
+	}
+
+
 	
 	// Update is called once per frame
 	protected override void Update () 
@@ -88,7 +109,8 @@ public class Werewolf : NPC {
 	{
 		
 		GameObject prey;
-		
+		target = gameManager.Villagers[0];
+
 		for (int i = 0; i < gameManager.Villagers.Count; i++)
 		{	
 			prey = gameManager.Villagers[i];
@@ -107,35 +129,35 @@ public class Werewolf : NPC {
 		
 		//Keeps werewolves away from Villager Spawn point
 		steeringForce += gameManager.avoidWt * AvoidObstacle(respawnPont, 100f);
-		
-		
+
+
+		// distance from me to mayor
 		float mayDist = Vector3.Distance(this.transform.position, gameManager.Mayor.transform.position);
 		
 		//Choose new villager to chase (closest villager)
-		target = gameManager.Villagers[0];
+		//target = gameManager.Villagers[0];
 		FindTarget();
 		
 		float tarDist = Vector3.Distance(this.transform.position, target.transform.position);
 		
-			if(tarDist > 30)
-			{
-				steeringForce += 10 * Pursuit(target.transform.forward +
-					target.transform.position);
-			}
-			else
-			{
-				steeringForce += 6 * Seek(target);	
-			}
-	
-			if(mayDist < 20)
-			{
-				steeringForce += 20 * Flee(gameManager.Mayor);	
-			}
-			else
-			{
-				steeringForce += 5 * Evasion(gameManager.Mayor.transform.forward +
-					gameManager.Mayor.transform.position);
-			}
+		if(tarDist > 30)
+		{
+			steeringForce += FollowPath() * 10;
+		}
+		else
+		{
+			steeringForce += 6 * Seek(target);
+		}
+
+		if(mayDist < 20)
+		{
+			steeringForce += 20 * Flee(gameManager.Mayor);	
+		}
+//		else
+//		{
+//			steeringForce += 5 * Evasion(gameManager.Mayor.transform.forward +
+//				gameManager.Mayor.transform.position);
+//		}
 		
 //		avoid close obstacles
 		for(int i =0; i < gameManager.Obstacles.Length; i++)

@@ -90,6 +90,43 @@ public class Vehicle : Steering
 		}
 	}
 
+	protected float TimeOfClosestApproach(GameObject target)
+	{
+		float time =-1;//deliberately out of bounds or "nulled out" for default case
+		Vehicle targetScript = (Vehicle)target.GetComponent("Vehicle");
+		Vector3 positionDifference = transform.position - target.transform.position;
+		Vector3 velocityDifference = (transform.forward*speed)-(target.transform.forward*targetScript.speed);
+		time = (-(velocityDifference.x*positionDifference.x+velocityDifference.y*positionDifference.y+velocityDifference.z*positionDifference.z)/(velocityDifference.x*velocityDifference.x+velocityDifference.y*velocityDifference.y+velocityDifference.z*velocityDifference.z));
+		return time;
+		// psuedo code explaination from class:
+		// t is the time when this character will be closest to the character char. 
+		// To calculate t, we will express the distance squared between the 2 characters
+		// as a function of t assuming that velocity remains constant over time. 
+		// let c1 and c2 be our 2 characters. Then their future positions in terms of t
+		// would be c1.position + c1.velocity * t and c2.position + c2.velocity * t repectively.
+		// if we subtract one future position from the other we would have a vector whose
+		// magnitude squared would represent the distance squared between the two 
+		// characters at time t
+		// (c1.position + c1.velocity * t ) -  (c2.position + c2.velocity * t)
+		// regrouping the terms and factoring out t we get:
+		// (c1.position - c2.position) + (c1.velocity -c2.velocity) *t
+		// we note that the first term is the difference beween the 2 positions
+		// and the second term is the difference between the 2 velocities
+		// posDif + velDif * t
+		// to get the magnitude squared (no square root needed)
+		// the x component of this vector is posDif.x + velDif.x * t
+		// the y component of this vector is posDif.y + velDif.y * t
+		// x squared would give us:
+		//(posDif.x)*(posDif.x) + 2*t*velDif.x*posDif.x + velDif.x*velDif.x *t*t
+		// y squared would give us: 
+		//(posDif.y)*(posDif.y) + 2*t*velDif.y*posDif.y + velDif.y*velDif.y *t*t
+		// adding these and taking the derivative with respect to t we get
+		// 2*(velDif.x*posDif.x+velDif.y*posDif.y)+2*t*(velDif.x*velDif.x+velDif.y*velDif.y);
+		// we can set the dervative equal to zero and solve the resulting equation for t 
+		// at the minimum distance between the characters (time of closest approach)
+		// t = -(velDif.x*posDif.x + velDif.y*posDif.y) / (velDif.x*velDif.x + velDif.y*velDif.y)
+	}
+
 	protected virtual void CalcSteeringForce ()
 	{}
 	protected virtual void ClampSteering()
