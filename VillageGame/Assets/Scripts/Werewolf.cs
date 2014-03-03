@@ -12,6 +12,10 @@ public class Werewolf : NPC {
 	// Current node index, I believe. Don't quote me on that
 	private int currentNodeIndex = 0;
 
+	//variables for distances of steering behaviors
+	public int seekDist = 30;
+	public int fleeDist = 20;
+
 	private int index = -1;
 	public int Index 
 	{
@@ -107,6 +111,7 @@ public class Werewolf : NPC {
 	
 	private void FindTarget()
 	{
+
 		
 		GameObject prey;
 		target = gameManager.Villagers[0];
@@ -118,7 +123,10 @@ public class Werewolf : NPC {
 			if(Vector3.Distance(this.transform.position, prey.transform.position) 
 				< Vector3.Distance(this.transform.position, target.transform.position))
 			{
-				target = gameManager.Villagers[i];
+				if(((Villager)gameManager.Villagers[i].GetComponent("Villager")).MayorDist > fleeDist)
+				{
+					target = gameManager.Villagers[i];
+				}
 			}
 		}
 	}
@@ -140,7 +148,7 @@ public class Werewolf : NPC {
 		
 		float tarDist = Vector3.Distance(this.transform.position, target.transform.position);
 		
-		if(tarDist > 30)
+		if(tarDist > seekDist)
 		{
 			steeringForce += FollowPath() * 10;
 		}
@@ -149,7 +157,7 @@ public class Werewolf : NPC {
 			steeringForce += 6 * Seek(target);
 		}
 
-		if(mayDist < 20)
+		if(mayDist < fleeDist)
 		{
 			steeringForce += 20 * Flee(gameManager.Mayor);	
 		}
