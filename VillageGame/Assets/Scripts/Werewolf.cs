@@ -38,7 +38,9 @@ public class Werewolf : NPC {
 	//Hunting variables
 	private GameObject target;
 	private int preyIndex;
-	
+
+	public NavMeshAgent myAgent;
+
 	// Use this for initialization
 	protected override void Start ()
 	{
@@ -52,9 +54,11 @@ public class Werewolf : NPC {
 		
 		preyIndex = 0;
 		target = gameManager.Villagers[preyIndex];
-
+		myAgent = (NavMeshAgent)this.GetComponent("NavMeshAgent");
+		myAgent.SetDestination(gameManager.WerewolfPath[currentNodeIndex].transform.position);
 		//target = gameManager.Villagers[0];
-		base.Start ();
+		//base.Start ();
+
 	}
 	
 	public void OnCollisionEnter(Collision wCollision)
@@ -71,50 +75,57 @@ public class Werewolf : NPC {
 	protected override Vector3 FollowPath()
 	{
 		// default so we don't break
-		if(gameManager.WerewolfPath.Length <= 0)
-			return Vector3.zero;
-		
+//		if(gameManager.WerewolfPath.Length <= 0)
+//			return Vector3.zero;
 		//cycle the node if im too close
-		if(Vector3.Distance(transform.position, gameManager.WerewolfPath[currentNodeIndex].transform.position) <= 10.0f)
+		//myAgent.Warp(gameManager.WerewolfPath[currentNodeIndex].transform.position);
+		Debug.Log(myAgent.pathStatus);
+		if(Vector3.Distance(transform.position, gameManager.WerewolfPath[currentNodeIndex].transform.position) <= 5.0f)
 		{
+
 			currentNodeIndex++;//go to next node
 			if(currentNodeIndex >= gameManager.WerewolfPath.Length)
 			{
 				currentNodeIndex = 0;
 			}
+			myAgent.SetDestination(gameManager.WerewolfPath[currentNodeIndex].transform.position);
 		}
-		return Seek(gameManager.WerewolfPath[currentNodeIndex].transform.position);//head for the next node in the path
+
+		//return Seek(gameManager.WerewolfPath[currentNodeIndex].transform.position);//head for the next node in the path
+		return Vector3.zero;
 	}
 
 
 	
 	// Update is called once per frame
-	protected override void Update () 
+	protected void FixedUpdate () 
 	{
-		CalcSteeringForce ();
-		ClampSteering ();
-		
-		moveDirection = transform.forward * speed;
-		// movedirection equals velocity
-		//add acceleration
-		moveDirection += steeringForce * Time.deltaTime;
-		//update speed
-		speed = moveDirection.magnitude;
-		
-		//area of fix
-		if (speed != moveDirection.magnitude) {
-			moveDirection = moveDirection.normalized * speed;
-		}
-		
-		//orient transform
-		if (moveDirection != Vector3.zero)
-			transform.forward = moveDirection;
-		
-		// Apply gravity
-		moveDirection.y -= gravity;
-		
-		// the CharacterController moves us subject to physical constraints
-		characterController.Move (moveDirection * Time.deltaTime);
+		FollowPath();
+		myAgent.updatePosition = true;
+//		CalcSteeringForce ();
+//		ClampSteering ();
+//		
+//		moveDirection = transform.forward * speed;
+//		// movedirection equals velocity
+//		//add acceleration
+//		moveDirection += steeringForce * Time.deltaTime;
+//		//update speed
+//		speed = moveDirection.magnitude;
+//		
+//		//area of fix
+//		if (speed != moveDirection.magnitude) {
+//			moveDirection = moveDirection.normalized * speed;
+//		}
+//		
+//		//orient transform
+//		if (moveDirection != Vector3.zero)
+//			transform.forward = moveDirection;
+//		
+//		// Apply gravity
+//		moveDirection.y -= gravity;
+//		
+//		// the CharacterController moves us subject to physical constraints
+//		characterController.Move (moveDirection * Time.deltaTime);
 	}
 	
 	private void FindTarget()

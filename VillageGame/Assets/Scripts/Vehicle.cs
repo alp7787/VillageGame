@@ -70,15 +70,15 @@ public class Vehicle : Steering
 	// Update is called once per frame
 	protected virtual void Update ()
 	{
-		//calculate steering - forces that change velocity
-		ClampForces ();
-		//forces must not exceed maxForce
-		CalcVelocity ();
-		//orient vehicle transform toward velocity
-		if (velocity != Vector3.zero) {
-			transform.forward = velocity;
-			MoveAndAlign ();
-		}
+//		//calculate steering - forces that change velocity
+//		ClampForces ();
+//		//forces must not exceed maxForce
+//		CalcVelocity ();
+//		//orient vehicle transform toward velocity
+//		if (velocity != Vector3.zero) {
+//			transform.forward = velocity;
+//			MoveAndAlign ();
+//		}
 	}
 
 	// if steering forces exceed maxForce they are set to maxForce

@@ -35,7 +35,6 @@ public class GameManager : MonoBehaviour
 
 	public GameObject[] VillagerPath;
 	public GameObject[] WerewolfPath;
-	
 
 	//values used by all villagers that are calculated by controller on update
 	private Vector3 flockDirection;
@@ -217,31 +216,7 @@ public class GameManager : MonoBehaviour
 
 		for (int i=0; i < numberOfWerewolves; i++)
 		{
-			if(i == 0)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(491, 35, 931), Quaternion.identity));
-			}
-			else if(i == 1)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(930, 35, 441), Quaternion.identity));
-			}
-			else if(i == 2)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(385, 35, 50), Quaternion.identity));
-			}
-			else if(i == 3)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(89, 35, 489), Quaternion.identity));	
-			}
-			else
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(700 + 5 * i, 5, 600), Quaternion.identity));
-			}
+			werewolves.Add( (GameObject)Instantiate(werewolfPrefab, new Vector3(400 + 5 * i, 1, 400 + 5 * i), Quaternion.identity));
 			
 			//grab a component reference
 			werewolf = werewolves [i].GetComponent<Werewolf>();

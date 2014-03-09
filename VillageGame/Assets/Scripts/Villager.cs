@@ -69,6 +69,7 @@ public class Villager : NPC
 		
 		gameManager = GameManager.Instance;
 		base.Start ();
+
 	}
 	
 	// Handles Collision with Cart for Scoring and Clean Up Purposes
@@ -181,6 +182,8 @@ public class Villager : NPC
 				steeringForce += AvoidObstacle(gameManager.Obstacles[i], gameManager.avoidDist);	
 			}
 		}
+		//remove me
+		steeringForce = Vector3.zero;
 	}
 
 	
@@ -188,9 +191,9 @@ public class Villager : NPC
 
 	protected override Vector3 FollowPath()
 	{
-		// default so we don't break
-		if(gameManager.VillagerPath.Length <= 0)
-			return Vector3.zero;
+//		// default so we don't break
+//		if(gameManager.VillagerPath.Length <= 0)
+//			return Vector3.zero;
 
 		//cycle the node if im too close
 		if(Vector3.Distance(transform.position, gameManager.VillagerPath[currentNodeIndex].transform.position) <= 10.0f)
@@ -201,7 +204,10 @@ public class Villager : NPC
 				currentNodeIndex = 0;
 			}
 		}
-		return Seek(gameManager.VillagerPath[currentNodeIndex].transform.position);//head for the next node in the path
+		NavMeshAgent myAgent = (NavMeshAgent)this.GetComponent("NavMeshAgent");
+		myAgent.SetDestination(gameManager.VillagerPath[currentNodeIndex].transform.position);
+		//return Seek(gameManager.VillagerPath[currentNodeIndex].transform.position);//head for the next node in the path
+		return Vector3.zero;
 	}
 
 
