@@ -35,7 +35,6 @@ public class GameManager : MonoBehaviour
 
 	public GameObject[] VillagerPath;
 	public GameObject[] WerewolfPath;
-	
 
 	//values used by all villagers that are calculated by controller on update
 	private Vector3 flockDirection;
@@ -91,6 +90,8 @@ public class GameManager : MonoBehaviour
 	// These are set in the UNITY INSPECTOR
 	public GameObject DeadVillagersText;
 	public GameObject SavedVillagersText;
+
+	private int villagerCap = 10;
 
 		
 	//Set stage for game, creating characters and the simple GUI implemented.
@@ -215,31 +216,7 @@ public class GameManager : MonoBehaviour
 
 		for (int i=0; i < numberOfWerewolves; i++)
 		{
-			if(i == 0)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(491, 35, 931), Quaternion.identity));
-			}
-			else if(i == 1)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(930, 35, 441), Quaternion.identity));
-			}
-			else if(i == 2)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(385, 35, 50), Quaternion.identity));
-			}
-			else if(i == 3)
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(89, 35, 489), Quaternion.identity));	
-			}
-			else
-			{
-				werewolves.Add( (GameObject)Instantiate(werewolfPrefab, 
-				                                        new Vector3(700 + 5 * i, 5, 600), Quaternion.identity));
-			}
+			werewolves.Add( (GameObject)Instantiate(werewolfPrefab, new Vector3(400 + 5 * i, 1, 400 + 5 * i), Quaternion.identity));
 			
 			//grab a component reference
 			werewolf = werewolves [i].GetComponent<Werewolf>();
@@ -264,7 +241,7 @@ public class GameManager : MonoBehaviour
 		Destroy(villager.Follower);
 		Destroy(villager.gameObject);
 		
-		CreateNewVillager();
+		//CreateNewVillager();
 		savedVillagers++;
 		SavedVillagersText.guiText.text = "Villagers Saved: " + savedVillagers;
 	}
@@ -282,7 +259,7 @@ public class GameManager : MonoBehaviour
 		Destroy (villager.gameObject);
 
 		// create new villager
-		CreateNewVillager();
+		//CreateNewVillager();
 
 		// increment
 		deadVillagers++;
@@ -293,8 +270,13 @@ public class GameManager : MonoBehaviour
 	
 	public void Update( )
 	{
+		numberOfvillagers = villagers.Count;
 		//calcCentroid( );//find average position of each flocker 
 		calcFlockDirection( );//find average "forward" for each flocker
+		if(numberOfvillagers < villagerCap)
+		{
+			CreateNewVillager();
+		}
 		//calcDistances( );
 	}
 	
@@ -305,7 +287,7 @@ public class GameManager : MonoBehaviour
 		
 		// calculate the average heading of the flock
 		// use transform.
-		for(int i = 0; i < villagers.Count; i++)
+		for(int i = 0; i < numberOfvillagers; i++)
 		{	
 			flockDirection = flockDirection + villagers[i].transform.forward; 
 		}
