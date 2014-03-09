@@ -12,6 +12,16 @@ public class Werewolf : NPC {
 	// Current node index, I believe. Don't quote me on that
 	private int currentNodeIndex = 0;
 
+	//weighting variables
+	private int seekWeight = 20;
+	private int fleeWeight = 30;
+	private int pathWeight = 10;
+
+
+	//variables for distances of steering behaviors
+	public int seekDist = 30;
+	public int fleeDist = 20;
+
 	private int index = -1;
 	public int Index 
 	{
@@ -28,7 +38,9 @@ public class Werewolf : NPC {
 	//Hunting variables
 	private GameObject target;
 	private int preyIndex;
-	
+
+	public NavMeshAgent myAgent;
+
 	// Use this for initialization
 	protected override void Start ()
 	{
@@ -42,7 +54,11 @@ public class Werewolf : NPC {
 		
 		preyIndex = 0;
 		target = gameManager.Villagers[preyIndex];
-		base.Start ();
+		myAgent = (NavMeshAgent)this.GetComponent("NavMeshAgent");
+		myAgent.SetDestination(gameManager.WerewolfPath[currentNodeIndex].transform.position);
+		//target = gameManager.Villagers[0];
+		//base.Start ();
+
 	}
 	
 	public void OnCollisionEnter(Collision wCollision)
@@ -59,66 +75,85 @@ public class Werewolf : NPC {
 	protected override Vector3 FollowPath()
 	{
 		// default so we don't break
-		if(gameManager.WerewolfPath.Length <= 0)
-			return Vector3.zero;
-		
+//		if(gameManager.WerewolfPath.Length <= 0)
+//			return Vector3.zero;
 		//cycle the node if im too close
-		if(Vector3.Distance(transform.position, gameManager.WerewolfPath[currentNodeIndex].transform.position) <= 10.0f)
+		//myAgent.Warp(gameManager.WerewolfPath[currentNodeIndex].transform.position);
+		Debug.Log(myAgent.pathStatus);
+		if(Vector3.Distance(transform.position, gameManager.WerewolfPath[currentNodeIndex].transform.position) <= 5.0f)
 		{
+
 			currentNodeIndex++;//go to next node
 			if(currentNodeIndex >= gameManager.WerewolfPath.Length)
 			{
 				currentNodeIndex = 0;
 			}
+			myAgent.SetDestination(gameManager.WerewolfPath[currentNodeIndex].transform.position);
 		}
-		return Seek(gameManager.WerewolfPath[currentNodeIndex].transform.position);//head for the next node in the path
+
+		//return Seek(gameManager.WerewolfPath[currentNodeIndex].transform.position);//head for the next node in the path
+		return Vector3.zero;
 	}
 
 
 	
 	// Update is called once per frame
-	protected override void Update () 
+	protected void FixedUpdate () 
 	{
-		CalcSteeringForce ();
-		ClampSteering ();
-		
-		moveDirection = transform.forward * speed;
-		// movedirection equals velocity
-		//add acceleration
-		moveDirection += steeringForce * Time.deltaTime;
-		//update speed
-		speed = moveDirection.magnitude;
-		
-		//area of fix
-		if (speed != moveDirection.magnitude) {
-			moveDirection = moveDirection.normalized * speed;
-		}
-		
-		//orient transform
-		if (moveDirection != Vector3.zero)
-			transform.forward = moveDirection;
-		
-		// Apply gravity
-		moveDirection.y -= gravity;
-		
-		// the CharacterController moves us subject to physical constraints
-		characterController.Move (moveDirection * Time.deltaTime);
+		FollowPath();
+		myAgent.updatePosition = true;
+//		CalcSteeringForce ();
+//		ClampSteering ();
+//		
+//		moveDirection = transform.forward * speed;
+//		// movedirection equals velocity
+//		//add acceleration
+//		moveDirection += steeringForce * Time.deltaTime;
+//		//update speed
+//		speed = moveDirection.magnitude;
+//		
+//		//area of fix
+//		if (speed != moveDirection.magnitude) {
+//			moveDirection = moveDirection.normalized * speed;
+//		}
+//		
+//		//orient transform
+//		if (moveDirection != Vector3.zero)
+//			transform.forward = moveDirection;
+//		
+//		// Apply gravity
+//		moveDirection.y -= gravity;
+//		
+//		// the CharacterController moves us subject to physical constraints
+//		characterController.Move (moveDirection * Time.deltaTime);
 	}
 	
 	private void FindTarget()
 	{
+
 		
 		GameObject prey;
-		target = gameManager.Villagers[0];
+
+		if(target == null)
+		{
+			target = gameManager.Villagers[0];
+		}
+
 
 		for (int i = 0; i < gameManager.Villagers.Count; i++)
 		{	
+
 			prey = gameManager.Villagers[i];
-			
-			if(Vector3.Distance(this.transform.position, prey.transform.position) 
-				< Vector3.Distance(this.transform.position, target.transform.position))
+
+			if(((Villager)gameManager.Villagers[i].GetComponent("Villager")).MayorDist > fleeDist)
 			{
-				target = gameManager.Villagers[i];
+			
+				if(Vector3.Distance(this.transform.position, prey.transform.position) 
+					< Vector3.Distance(this.transform.position, target.transform.position))
+				{
+
+					target = gameManager.Villagers[i];
+				}
 			}
 		}
 	}
@@ -140,19 +175,20 @@ public class Werewolf : NPC {
 		
 		float tarDist = Vector3.Distance(this.transform.position, target.transform.position);
 		
-		if(tarDist > 30)
+		if(mayDist < fleeDist)
 		{
-			steeringForce += FollowPath() * 10;
-		}
-		else
-		{
-			steeringForce += 6 * Seek(target);
+			steeringForce += fleeWeight * Flee(gameManager.Mayor);
 		}
 
-		if(mayDist < 20)
+		steeringForce += FollowPath() * pathWeight;
+	
+		if(((Villager)target.GetComponent("Villager")).MayorDist > fleeDist)
 		{
-			steeringForce += 20 * Flee(gameManager.Mayor);	
+			steeringForce += seekWeight * (seekDist/tarDist) * Seek(target);
 		}
+
+
+
 //		else
 //		{
 //			steeringForce += 5 * Evasion(gameManager.Mayor.transform.forward +
