@@ -12,6 +12,12 @@ public class Werewolf : NPC {
 	// Current node index, I believe. Don't quote me on that
 	private int currentNodeIndex = 0;
 
+	//weighting variables
+	private int seekWeight = 20;
+	private int fleeWeight = 30;
+	private int pathWeight = 10;
+
+
 	//variables for distances of steering behaviors
 	public int seekDist = 30;
 	public int fleeDist = 20;
@@ -46,6 +52,8 @@ public class Werewolf : NPC {
 		
 		preyIndex = 0;
 		target = gameManager.Villagers[preyIndex];
+
+		//target = gameManager.Villagers[0];
 		base.Start ();
 	}
 	
@@ -114,17 +122,25 @@ public class Werewolf : NPC {
 
 		
 		GameObject prey;
-		target = gameManager.Villagers[0];
+
+		if(target == null)
+		{
+			target = gameManager.Villagers[0];
+		}
+
 
 		for (int i = 0; i < gameManager.Villagers.Count; i++)
 		{	
+
 			prey = gameManager.Villagers[i];
-			
-			if(Vector3.Distance(this.transform.position, prey.transform.position) 
-				< Vector3.Distance(this.transform.position, target.transform.position))
+
+			if(((Villager)gameManager.Villagers[i].GetComponent("Villager")).MayorDist > fleeDist)
 			{
-				if(((Villager)gameManager.Villagers[i].GetComponent("Villager")).MayorDist > fleeDist)
+			
+				if(Vector3.Distance(this.transform.position, prey.transform.position) 
+					< Vector3.Distance(this.transform.position, target.transform.position))
 				{
+
 					target = gameManager.Villagers[i];
 				}
 			}
@@ -148,19 +164,20 @@ public class Werewolf : NPC {
 		
 		float tarDist = Vector3.Distance(this.transform.position, target.transform.position);
 		
-		if(tarDist > seekDist)
-		{
-			steeringForce += FollowPath() * 10;
-		}
-		else
-		{
-			steeringForce += 6 * Seek(target);
-		}
-
 		if(mayDist < fleeDist)
 		{
-			steeringForce += 20 * Flee(gameManager.Mayor);	
+			steeringForce += fleeWeight * Flee(gameManager.Mayor);
 		}
+
+		steeringForce += FollowPath() * pathWeight;
+	
+		if(((Villager)target.GetComponent("Villager")).MayorDist > fleeDist)
+		{
+			steeringForce += seekWeight * (seekDist/tarDist) * Seek(target);
+		}
+
+
+
 //		else
 //		{
 //			steeringForce += 5 * Evasion(gameManager.Mayor.transform.forward +

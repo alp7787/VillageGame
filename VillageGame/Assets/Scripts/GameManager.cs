@@ -92,6 +92,8 @@ public class GameManager : MonoBehaviour
 	public GameObject DeadVillagersText;
 	public GameObject SavedVillagersText;
 
+	private int villagerCap = 10;
+
 		
 	//Set stage for game, creating characters and the simple GUI implemented.
 	public void Start ()
@@ -264,7 +266,7 @@ public class GameManager : MonoBehaviour
 		Destroy(villager.Follower);
 		Destroy(villager.gameObject);
 		
-		CreateNewVillager();
+		//CreateNewVillager();
 		savedVillagers++;
 		SavedVillagersText.guiText.text = "Villagers Saved: " + savedVillagers;
 	}
@@ -282,7 +284,7 @@ public class GameManager : MonoBehaviour
 		Destroy (villager.gameObject);
 
 		// create new villager
-		CreateNewVillager();
+		//CreateNewVillager();
 
 		// increment
 		deadVillagers++;
@@ -293,8 +295,13 @@ public class GameManager : MonoBehaviour
 	
 	public void Update( )
 	{
+		numberOfvillagers = villagers.Count;
 		//calcCentroid( );//find average position of each flocker 
 		calcFlockDirection( );//find average "forward" for each flocker
+		if(numberOfvillagers < villagerCap)
+		{
+			CreateNewVillager();
+		}
 		//calcDistances( );
 	}
 	
@@ -305,7 +312,7 @@ public class GameManager : MonoBehaviour
 		
 		// calculate the average heading of the flock
 		// use transform.
-		for(int i = 0; i < villagers.Count; i++)
+		for(int i = 0; i < numberOfvillagers; i++)
 		{	
 			flockDirection = flockDirection + villagers[i].transform.forward; 
 		}
